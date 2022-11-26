@@ -1,121 +1,120 @@
-# Projeto de ORI
-# Alunas: Ana Cristina, Maria Gabriella e Larissa Mendes
-
-from asyncore import write
-from mimetypes import init
-
 import re
 
 conjunto = open("conjunto.txt", "r").read()
 consulta = open("consulta.txt", "r").read()
 
-#função que tira a pontuação do texto 
-def limpaTexto(texto):
-  return texto.replace(",", "").replace(".", "").replace("!", "").replace("?", "")
 
-#função que remove as palavras desconsideradas
-def removeDesconsideradas(text): 
+# Retira todas as pontuações do texto
+def limpaTexto(texto):
+    return texto.replace(",", "").replace(".", "").replace("!", "").replace("?", "")
+
+
+# Retira palavras desconsideradas
+def removeDesconsideradas(text):
     with open("desconsideradas.txt", "r") as textFile:
-            lines = textFile.readlines()
-            lines = list(map(lambda s: s.strip(), lines))
+        lines = textFile.readlines()
+        lines = list(map(lambda s: s.strip(), lines))
 
     for i in lines:
-        text = re.sub(r'\s'+i+'([\s,\.])',r'\1',text) 
-
+        pattern = r'\b' + i + '([\s,.])'  # Retira todas as ocorrencias da palavra encontrada
+        replacement = r''  # E substitui por nada
+        text = re.sub(pattern, replacement, text)
     return text
 
-#função que verifica o tipo de busca
-def busca(consulta):
-    if(consulta.find(",") != -1):
-        return "and"
-    elif(consulta.find(";") != -1):
-        return "or"
-        
 
-#função que retorna a resposta na formatação pedida
+# Retorna o tipo de busca
+def busca(consulta):
+    if consulta.find(",") != -1:  # Caso as palavras estejam separar por , siginifica AND
+        return "and"
+    elif consulta.find(";") != -1:  # Caso as palavras estejam separar por ; siginifica OR
+        return "or"
+
+
+# Retorna o arquivo resposta.txt
 def resposta(conjunto, consulta):
     qtd = 0
     files = []
-    tipo = busca(consulta)
-    if(tipo == "and"):
-        consulta = consulta.split(',')  
-    elif(tipo == "or"):
-        consulta = consulta.split(';')
+    tipo = busca(consulta)  # Define o tipo de busca
+    if tipo == "and":
+        consulta = consulta.split(',')  # Caso seja and, separo as palavras por virgula
+    elif tipo == "or":
+        consulta = consulta.split(';')  # Caso seja or, separo as palavras por ponto e virgula
 
-    for linha in conjunto.splitlines():
-        linha = linha.rstrip()
-        arquivo = open(linha, "r")
-        texto = str(arquivo.read()).strip()
-        
-        #print(consulta)
-        textoLimpo = limpaTexto(texto)
-        textoFinal = removeDesconsideradas(textoLimpo)
+    for linha in conjunto.splitlines():  # Separando cada arquivo como um valor de linha
+        linha = linha.rstrip()  # Tiro qualquer espaço que tenha no final da minha linha
+
+        arquivo = open(linha, "r")  # Passo cada linha como um arquivo de texto pro meu arquivo
+        texto = str(arquivo.read()).strip()  # Tiro qualquer espaço que tenha no começo ou no fim da linha
+
+        textoLimpo = limpaTexto(texto)  # Retiro a pontuação
+        textoFinal = removeDesconsideradas(textoLimpo)  # Retiro as palavras desconsideradas
 
         achouPalavras = 0
         for palavra in consulta:
-            if(palavra in textoFinal):
-                achouPalavras += 1
+            if palavra in textoFinal:  # Verifico se encontro alguma palavra buscada na minha linha
+                achouPalavras += 1  # Se encontro eu aumento o numero de palavras achadas
 
-        if(tipo == "and" and achouPalavras == len(consulta)):
+        if tipo == "and" and achouPalavras == len(consulta):  # Verifico se achei as duas palavras consultadas
             qtd += 1
-            files.append(linha)
-        elif(tipo == "or" and achouPalavras > 0):
+            files.append(linha)  # Se sim adiciono qual arquivo esta
+        elif tipo == "or" and achouPalavras > 0:  # Verifico se achei qualquer uma das duas palavras consultadas
             qtd += 1
-            files.append(linha)
-        arquivo.close()
+            files.append(linha)  # Se sim adiciono qual arquivo esta
+        arquivo.close()  # Fecho o arquivo
 
-    return str(qtd)+"\n"+"\n".join(files)
+    saida = str(qtd) + "\n" + "\n".join(files)  # Retorno a qtd e quais arquivos elas estão
 
+    teste = open("resposta.txt", "w")
+    teste.write(saida)
+    teste.close()
+
+
+# Retorna o arquivo indice.txt
 def pegarIndice(conjunto):
     dicionarios = []
     palavras = []
-    for linha in conjunto.splitlines():
-        linha = linha.rstrip()
+    for linha in conjunto.splitlines():  # Para cada arquivo do meu conjunto eu transformo os textos em uma linha
+        linha = linha.rstrip()  # Retiro espaços no final da linha caso haja
+
+        arquivo = open(linha, "r")  # Leio cada linha
+        texto = str(arquivo.read()).strip()  # E retiro espaços antes e depois
+
+        textoLimpo = limpaTexto(texto)  # Retiro pontuação
+        textoFinal = removeDesconsideradas(textoLimpo)  # Retiramos palavras desconsideradas
+
+        textoFinal = textoFinal.split()  # Separo cada palavra por espaço
+
         dic = {}
-        arquivo = open(linha, "r")
-        texto = str(arquivo.read()).strip()
-
-        textoLimpo = limpaTexto(texto)
-        textoFinal = removeDesconsideradas(textoLimpo)
-
-        textoFinal = textoFinal.split(' ')
-        
-        for p in textoFinal:
-            try: 
+        for p in textoFinal:  # Adicionando cada palavra como um dicionario
+            try:
                 dic[p] += 1
             except:
                 dic[p] = 1
             palavras.append(p)
-        
-        dicionarios.append(dic)
-        # print(textoFinal)
-        # print(dic)
+
+        dicionarios.append(dic)  # Adicionando cada dicionario na lista de dicionarios
         arquivo.close()
-    
-    palavras = list( dict.fromkeys(palavras) )
-    #print(palavras)
+
+    palavras = list(dict.fromkeys(palavras))  # Pegando somente a palavra chave do dicionario
 
     indice = open("indice.txt", 'w')
-    palavras = sorted(palavras)
-    for p in palavras:
+    palavras = sorted(palavras)  # Organizo as palavras
+    for p in palavras:  # Cada palavra chave
         frase = []
         count = 1
-        frase.append(p)
-        for dic in dicionarios:
+        frase.append(p)  # Adiciono na lista de palavras
+        for dic in dicionarios:  # Para cada dicionario meu na lista de dicionarios
             try:
-                frase.append(str(count)+','+str(dic[p]))
+                frase.append(str(count) + ',' + str(dic[p]))  # Esrevo quantas vezes ele apareceu e o nome dele
             except:
                 pass
-            count += 1
-        
-        frase = " ".join(frase)
-        indice.write(frase+'\n')
+            count += 1  # Incremento toda vez que a palavra se repete
+
+        frase = " ".join(frase)  # Retiro os []'' que tem no tipo de dado dicionario
+        indice.write(frase + '\n')  # E escrevo no meu indice
 
     indice.close()
-    
-pegarIndice(conjunto)
 
-saída = resposta(conjunto, consulta)
-r = open("resposta.txt", "w")
-r.write(saída)
-r.close()
+
+pegarIndice(conjunto)
+resposta(conjunto, consulta)

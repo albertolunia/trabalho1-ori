@@ -1,0 +1,1 @@
+arquivo de teste. contem a palavra casa e a palavra tambem, deve aparecer no arquivo de resposta!!

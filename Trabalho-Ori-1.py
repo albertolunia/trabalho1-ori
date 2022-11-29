@@ -1,12 +1,15 @@
 import re
 
-conjunto = open("conjunto.txt", "r").read()
 consulta = open("consulta.txt", "r").read()
+conjunto = open("conjunto.txt", "r").read()
 
 
-# Retira todas as pontuações do texto
-def limpaTexto(texto):
-    return texto.replace(",", "").replace(".", "").replace("!", "").replace("?", "")
+# Retorna o tipo de busca
+def tipoDeBusca(consulta):
+    if consulta.find(",") != -1:  # Caso as palavras estejam separar por , siginifica AND
+        return "and"
+    elif consulta.find(";") != -1:  # Caso as palavras estejam separar por ; siginifica OR
+        return "or"
 
 
 # Retira palavras desconsideradas
@@ -22,19 +25,16 @@ def removeDesconsideradas(text):
     return text
 
 
-# Retorna o tipo de busca
-def busca(consulta):
-    if consulta.find(",") != -1:  # Caso as palavras estejam separar por , siginifica AND
-        return "and"
-    elif consulta.find(";") != -1:  # Caso as palavras estejam separar por ; siginifica OR
-        return "or"
+# Retira todas as pontuações do texto
+def removePontuacao(texto):
+    return texto.replace(",", "").replace(".", "").replace("!", "").replace("?", "")
 
 
 # Retorna o arquivo resposta.txt
-def resposta(conjunto, consulta):
+def criaArquivoResposta(conjunto, consulta):
     qtd = 0
     files = []
-    tipo = busca(consulta)  # Define o tipo de busca
+    tipo = tipoDeBusca(consulta)  # Define o tipo de busca
     if tipo == "and":
         consulta = consulta.split(',')  # Caso seja and, separo as palavras por virgula
     elif tipo == "or":
@@ -46,7 +46,7 @@ def resposta(conjunto, consulta):
         arquivo = open(linha, "r")  # Passo cada linha como um arquivo de texto pro meu arquivo
         texto = str(arquivo.read()).strip()  # Tiro qualquer espaço que tenha no começo ou no fim da linha
 
-        textoLimpo = limpaTexto(texto)  # Retiro a pontuação
+        textoLimpo = removePontuacao(texto)  # Retiro a pontuação
         textoFinal = removeDesconsideradas(textoLimpo)  # Retiro as palavras desconsideradas
 
         achouPalavras = 0
@@ -70,7 +70,7 @@ def resposta(conjunto, consulta):
 
 
 # Retorna o arquivo indice.txt
-def pegarIndice(conjunto):
+def criaArquivoIndice(conjunto):
     dicionarios = []
     palavras = []
     for linha in conjunto.splitlines():  # Para cada arquivo do meu conjunto eu transformo os textos em uma linha
@@ -79,7 +79,7 @@ def pegarIndice(conjunto):
         arquivo = open(linha, "r")  # Leio cada linha
         texto = str(arquivo.read()).strip()  # E retiro espaços antes e depois
 
-        textoLimpo = limpaTexto(texto)  # Retiro pontuação
+        textoLimpo = removePontuacao(texto)  # Retiro pontuação
         textoFinal = removeDesconsideradas(textoLimpo)  # Retiramos palavras desconsideradas
 
         textoFinal = textoFinal.split()  # Separo cada palavra por espaço
@@ -116,5 +116,5 @@ def pegarIndice(conjunto):
     indice.close()
 
 
-pegarIndice(conjunto)
-resposta(conjunto, consulta)
+criaArquivoIndice(conjunto)
+criaArquivoResposta(conjunto, consulta)
